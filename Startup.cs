@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DatingApp.API.Data;
+using DatingApp.API.DTOs;
+using DatingApp.API.Interface;
+using DatingApp.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -31,6 +34,8 @@ namespace DatingApp.API
             services.AddDbContext<DataContext>(x=>x.UseSqlite(_Config.GetConnectionString("DefaultConnection")));
             services.AddControllers();
             services.AddCors();
+            //services.AddScoped<ITokenServices, TokenService>();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -42,9 +47,9 @@ namespace DatingApp.API
             }
 
             //app.UseHttpsRedirection();
-            app.UseCors(x=>x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+           
            app.UseRouting(); //complie time error if commented
-
+            app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200"));
             app.UseAuthorization();
 
             //run time error if commented 
