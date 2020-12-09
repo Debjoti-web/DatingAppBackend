@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DatingApp.API.Data;
 using DatingApp.API.DTOs;
+using DatingApp.API.Interface;
 using DatingApp.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,13 +14,15 @@ namespace DatingApp.API.Controllers
     {
        // private readonly IValidator<RegisterDto> _validator;
         private readonly DataContext _context;
-        public AccountController(DataContext context)
+        private readonly ITokenServices _services;
+        public AccountController(DataContext context, ITokenServices service)
         {
             _context=context;
           //  _validator=validator;
+          _services=service;
         }
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register([FromBody] RegisterDto register)
+        public async Task<ActionResult<Userdto>> Register([FromBody] RegisterDto register)
         {
            //var validator=new RegisterDtoValidator();
            // var result= validator.Validate(register);
@@ -41,14 +44,17 @@ namespace DatingApp.API.Controllers
                 };
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
-                return newUser;
+                return new Userdto{
+                    UserName=newUser.UserName,
+                    Token=_services.CreateToken(newUser)
+                };
         }
         private async Task<bool> UserExists(string userName)
         {
-                return await _context.Users.AnyAsync(ECKeyXmlFormat=>ECKeyXmlFormat.UserName==userName.ToLower());
+                return await _context.Users.AnyAsync(x=>x.UserName==userName.ToLower());
         }
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login(LoginDto login)
+        public async Task<ActionResult<Userdto>> Login(LoginDto login)
         {
             //SingleOrDefaultAsync throws exception if there is more than one response.
                 var user= await _context.Users.SingleOrDefaultAsync(use=>use.UserName==login.UserName);
@@ -62,7 +68,10 @@ namespace DatingApp.API.Controllers
                     if(user.PasswordHash[i]!=c[i])
                     return Unauthorized("Wrong Password");
                 }
-                return user;
+                return new Userdto{
+                    UserName=user.UserName,
+                    Token=_services.CreateToken(user)
+                };
         }
         
     }
